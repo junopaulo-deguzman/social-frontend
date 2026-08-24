@@ -13,7 +13,7 @@ const geistMono = Geist_Mono({
 });
 
 export const metadata: Metadata = {
-  metadataBase: new URL(process.env.NEXT_PUBLIC_SITE_URL ?? 'http://localhost:3000'),
+  metadataBase: new URL(process.env.NEXT_PUBLIC_SITE_URL ?? 'https://threadly-social.junopaulo-e-deguzman.chatgpt.site'),
   title: 'Threadly — Find your people',
   description: 'A community-powered social feed for builders, learners, and curious people.',
   openGraph: {
