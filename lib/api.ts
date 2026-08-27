@@ -14,18 +14,18 @@ export type Post = {
 
 export type UserProfile = {
   username: string;
-  Name: string;
+  name: string;
   bio: string;
+  posts: number;
   karma: number;
   joined: string;
 };
 
 type CreatePostInput = Pick<Post, 'community' | 'title' | 'body'>;
 
-const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL?.replace(/\/$/, '');
+const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL?.replace(/\/$/, '') ?? ''; 
 
 async function request<T>(path: string, init?: RequestInit): Promise<T> {
-  if (!API_BASE_URL) throw new Error('NEXT_PUBLIC_API_URL is not configured');
   const response = await fetch(`${API_BASE_URL}${path}`, {
     ...init,
     headers: { 'Content-Type': 'application/json', ...init?.headers },
