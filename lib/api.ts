@@ -12,6 +12,14 @@ export type Post = {
   tag?: string;
 };
 
+export type UserProfile = {
+  username: string;
+  Name: string;
+  bio: string;
+  karma: number;
+  joined: string;
+};
+
 type CreatePostInput = Pick<Post, 'community' | 'title' | 'body'>;
 
 const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL?.replace(/\/$/, '');
@@ -34,5 +42,5 @@ export const threadlyApi = {
   vote: (postId: number, value: -1 | 0 | 1) => request<Post>(`/v1/posts/${postId}/vote`, { method: 'PUT', body: JSON.stringify({ value }) }),
   save: (postId: number) => request<void>(`/v1/posts/${postId}/saved`, { method: 'PUT' }),
   unsave: (postId: number) => request<void>(`/v1/posts/${postId}/saved`, { method: 'DELETE' }),
-  profile: (username: string) => request(`/v1/users/${username}`),
+  profile: (username: string) => request<UserProfile>(`/v1/users/${username}`),
 };

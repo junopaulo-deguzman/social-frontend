@@ -1,24 +1,35 @@
 'use client';
 
-import { type FormEvent, useState } from 'react';
-import type { Post } from '../lib/api';
-
-const starterPosts: Post[] = [
-  { id: 1, community: 'aws-builders', author: 'cloud_cadet', age: '2h', title: 'Finally shipped my first app on AWS 🎉', body: 'React on the front, a tiny Go API behind API Gateway, and DynamoDB for the data. The architecture is simple, but watching that first request come back felt incredible.', score: 128, comments: 24, tag: 'Showcase' },
-  { id: 2, community: 'golang', author: 'bytebloom', age: '5h', title: 'What I wish I knew before building my first Go API', body: 'Keep the handlers boring. Put business logic somewhere testable, pass context everywhere, and make graceful shutdown part of day one—not a cleanup task.', score: 86, comments: 31, tag: 'Discussion' },
-  { id: 3, community: 'webdev', author: 'pixel_nomad', age: '8h', title: 'Small detail, big difference: design your empty states', body: 'An empty feed should still tell people where they are, what belongs there, and the one action that gets them moving.', score: 54, comments: 12 },
-];
+import { type FormEvent, useEffect, useState } from 'react';
+import type { Post, UserProfile } from '../lib/api';
+import { threadlyApi } from '../lib/api';
 
 const communities = [['A', 'aws-builders', '42k'], ['G', 'golang', '218k'], ['R', 'reactjs', '387k'], ['W', 'webdev', '1.2m']];
 
 export default function Home() {
-  const [posts, setPosts] = useState(starterPosts);
+  const [posts, setPosts] = useState<Post[]>([]);
   const [votes, setVotes] = useState<Record<number, -1 | 0 | 1>>({});
   const [sort, setSort] = useState<'Hot' | 'New' | 'Top'>('Hot');
   const [query, setQuery] = useState('');
   const [saved, setSaved] = useState<Set<number>>(new Set());
+  const [profile, setProfile] = useState<UserProfile | null>(null);
   const [view, setView] = useState<'feed' | 'saved' | 'profile'>('feed');
   const [showComposer, setShowComposer] = useState(false);
+
+  useEffect(() => {
+    threadlyApi.feed()
+      .then((initialPosts) => setPosts(initialPosts))
+      .catch((error) => {
+        console.error('Failed to load posts:', error);
+      });
+    
+    threadlyApi.profile('junobuilds')
+      .then((profile) => setProfile(profile))
+      .catch((error) => {
+        console.error('Failed to load profile:', error);
+      });
+  }, []);
+
 
   const displayedPosts = posts
     .filter((post) => view !== 'saved' || saved.has(post.id))
@@ -28,13 +39,23 @@ export default function Home() {
   function vote(postId: number, direction: -1 | 1) {
     const previous = votes[postId] ?? 0;
     const next = previous === direction ? 0 : direction;
-    setVotes((current) => ({ ...current, [postId]: next }));
-    setPosts((current) => current.map((post) => post.id === postId ? { ...post, score: post.score - previous + next } : post));
+
+    threadlyApi.vote(postId, next)
+    .then((updatedPost) => {
+      setVotes((current) => ({ ...current, [postId]: next }));
+      setPosts((current) => current.map((post) => post.id === postId ? updatedPost : post));
+    })
+    .catch((error) => {
+      console.error('Failed to vote:', error);
+    });
   }
 
   function toggleSaved(postId: number) {
     setSaved((current) => {
       const next = new Set(current);
+      threadlyApi[ next.has(postId) ? 'unsave' : 'save' ](postId).catch((error) => {
+        console.error('Failed to toggle saved state:', error);
+      });
       if (next.has(postId)) next.delete(postId); else next.add(postId);
       return next;
     });
@@ -47,7 +68,25 @@ export default function Home() {
     const body = String(form.get('body') ?? '').trim();
     const community = String(form.get('community') ?? 'aws-builders');
     if (!title || !body) return;
-    setPosts((current) => [{ id: Date.now(), community, author: 'junobuilds', age: 'now', title, body, score: 1, comments: 0, tag: 'New' }, ...current]);
+    
+    const newPost: Post = {
+      id: posts.length + 1,
+      community,
+      author: 'junobuilds',
+      age: 'now',
+      title,
+      body,
+      score: 1,
+      comments: 0,
+      tag: 'New'
+    };
+
+    threadlyApi.createPost({ community, title, body }).then((createdPost) => {
+      setPosts((current) => [createdPost, ...current]);
+    }).catch((error) => {
+      console.error('Failed to create post:', error);
+    });
+    
     setView('feed');
     setSort('New');
     setShowComposer(false);
