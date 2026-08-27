@@ -110,19 +110,7 @@ export default function Home() {
     const body = String(form.get("body") ?? "").trim();
     const community = String(form.get("community") ?? "aws-builders");
     if (!title || !body) return;
-
-    const newPost: Post = {
-      id: posts.length + 1,
-      community,
-      author: "junobuilds",
-      age: "now",
-      title,
-      body,
-      score: 1,
-      comments: 0,
-      tag: "New",
-    };
-
+ 
     threadlyApi
       .createPost({ community, title, body })
       .then((createdPost) => {
@@ -253,7 +241,7 @@ export default function Home() {
                   ? profile?.name
                   : view === "saved"
                     ? "Saved for later."
-                    : "Good afternoon, Juno."}
+                    : `Good afternoon, ${profile?.name ?? "there"}.`}
               </h1>
               <p>
                 {view === "profile"
