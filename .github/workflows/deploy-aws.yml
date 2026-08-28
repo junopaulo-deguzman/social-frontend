@@ -86,6 +86,7 @@ jobs:
         with:
           role-to-assume: ${{ vars.AWS_ROLE_ARN }}
           aws-region: ${{ vars.AWS_REGION }}
+          audience: sts.amazonaws.com
           allowed-account-ids: 456631682128
 
       - name: Upload frontend to S3
